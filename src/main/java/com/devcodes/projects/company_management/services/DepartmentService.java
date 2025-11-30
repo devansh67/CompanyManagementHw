@@ -2,13 +2,14 @@ package com.devcodes.projects.company_management.services;
 
 import com.devcodes.projects.company_management.dtos.DepartmentDTO;
 import com.devcodes.projects.company_management.entities.DepartmentEntity;
+import com.devcodes.projects.company_management.exceptions.ResourceNotFoundException;
 import com.devcodes.projects.company_management.repositories.DepartmentRepository;
 import org.modelmapper.ModelMapper;
-import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,12 @@ public class DepartmentService {
     // This is used to create a new department in the database
     public DepartmentDTO createNewDepartment(DepartmentDTO inputDepartment) {
         DepartmentEntity departmentEntity = modelMapper.map(inputDepartment, DepartmentEntity.class);
+        // Set ID to null to ensure it's treated as a new entity (persist) not an update (merge)
+        departmentEntity.setId(null);
+        // Set createdAt if not provided
+        if (departmentEntity.getCreatedAt() == null) {
+            departmentEntity.setCreatedAt(Instant.now());
+        }
         DepartmentEntity savedDepartment = departmentRepository.save(departmentEntity);
         return modelMapper.map(savedDepartment, DepartmentDTO.class);
     }
@@ -49,6 +56,9 @@ public class DepartmentService {
 
     // Change all the department details that are already present with a different set of details
     public DepartmentDTO updateDepartmentById(DepartmentDTO inputDepartment, Long id) {
+        if (!isDepartmentPresentById(id)) {
+            throw new ResourceNotFoundException("Department not found with id: " + id);
+        }
         DepartmentEntity departmentEntity  = modelMapper.map(inputDepartment, DepartmentEntity.class);
         departmentEntity.setId(id);
         DepartmentEntity newDepartment = departmentRepository.save(departmentEntity);
@@ -56,28 +66,27 @@ public class DepartmentService {
     }
 
     // Delete a department by inputted id
-    public Boolean deleteEmployeeById(Long id) {
-        if(isDepartmentPresentById(id)) {
-            departmentRepository.deleteById(id);
-            return true;
-        } else {
-            return false;
+    public void deleteDepartmentById(Long id) {
+        if (!isDepartmentPresentById(id)) {
+            throw new ResourceNotFoundException("Department not found with id: " + id);
         }
+        departmentRepository.deleteById(id);
     }
 
     public DepartmentDTO partialUpdateDepartmentById(Map<String, Object> fieldToUpdate, Long id) {
-        if(isDepartmentPresentById(id)) {
-            DepartmentEntity departmentEntity = departmentRepository.findById(id).get();
-            fieldToUpdate.forEach((field, value) -> {
-                Field targetField = ReflectionUtils.findField(DepartmentEntity.class, field);
-                assert targetField != null;
-                targetField.setAccessible(true);
-                ReflectionUtils.setField(targetField, departmentEntity, value);
-            });
-            return modelMapper.map(departmentRepository.save(departmentEntity), DepartmentDTO.class);
-        } else {
-            return  null;
-        }
+        DepartmentEntity departmentEntity = departmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
+        
+        fieldToUpdate.forEach((field, value) -> {
+            Field targetField = ReflectionUtils.findField(DepartmentEntity.class, field);
+            if (targetField == null) {
+                throw new IllegalArgumentException("Field '" + field + "' does not exist in DepartmentEntity");
+            }
+            targetField.setAccessible(true);
+            ReflectionUtils.setField(targetField, departmentEntity, value);
+        });
+        
+        return modelMapper.map(departmentRepository.save(departmentEntity), DepartmentDTO.class);
     }
 
     // Helper functions

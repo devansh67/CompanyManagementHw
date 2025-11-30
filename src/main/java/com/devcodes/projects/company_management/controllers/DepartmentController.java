@@ -1,6 +1,7 @@
 package com.devcodes.projects.company_management.controllers;
 
 import com.devcodes.projects.company_management.dtos.DepartmentDTO;
+import com.devcodes.projects.company_management.exceptions.ResourceNotFoundException;
 import com.devcodes.projects.company_management.services.DepartmentService;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
@@ -30,11 +31,11 @@ public class DepartmentController {
 
     // Get department by id if exists in the database
     @GetMapping(path = "/{departmentId}")
-    public Optional<ResponseEntity<DepartmentDTO>> getDepartmentById(@PathVariable(name = "departmentId") Long id) {
+    public ResponseEntity<DepartmentDTO> getDepartmentById(@PathVariable(name = "departmentId") Long id) {
         Optional<DepartmentDTO> departmentDTO = departmentService.getDepartmentById(id);
-        return Optional.of(departmentDTO
+        return departmentDTO
                 .map(ResponseEntity::ok)
-                .orElseThrow(NoSuchElementException::new));
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: "+id));
     }
 
     // Create a new department
@@ -44,23 +45,23 @@ public class DepartmentController {
         return new ResponseEntity<>(departmentDTO, HttpStatus.CREATED);
     }
 
+    // Update all details of a department using a departmentId
+    @PostMapping(path = "/{departmentId}")
+    public ResponseEntity<DepartmentDTO> updateDepartmentById(@RequestBody @Valid DepartmentDTO inputDepartment, @PathVariable(name = "departmentId") Long id) {
+        DepartmentDTO departmentDTO = departmentService.updateDepartmentById(inputDepartment, id);
+        return new ResponseEntity<>(departmentDTO, HttpStatus.ACCEPTED);
+    }
+
     // Delete a department
     @DeleteMapping(path = "/{departmentId}")
-    public ResponseEntity<Boolean> deleteDepartment(@PathVariable(name = "departmentId") Long id) {
-        if(departmentService.deleteEmployeeById(id)) {
-            return ResponseEntity.ok(true);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteDepartment(@PathVariable(name = "departmentId") Long id) {
+        departmentService.deleteDepartmentById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping(path = "/{departmentId}")
     public ResponseEntity<DepartmentDTO> partialUpdateDepartmentById(@RequestBody Map<String, Object> fieldToUpdate, @PathVariable(name = "departmentId") Long id) {
         DepartmentDTO departmentDTO = departmentService.partialUpdateDepartmentById(fieldToUpdate, id);
-        if(departmentDTO != null) {
-            return ResponseEntity.ok(departmentDTO);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(departmentDTO);
     }
 }
