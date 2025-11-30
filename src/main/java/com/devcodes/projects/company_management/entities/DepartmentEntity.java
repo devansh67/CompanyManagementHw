@@ -1,9 +1,10 @@
 package com.devcodes.projects.company_management.entities;
 
 import jakarta.persistence.Entity;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Table;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
@@ -11,9 +12,14 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "departments")
 @Entity
 public class DepartmentEntity {
-    Integer id;
+    @Id
+    @GeneratedValue
+    Long id;
     String title;
     Boolean isActive;
     Instant createdAt;
