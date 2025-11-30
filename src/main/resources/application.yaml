@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: company-management
+  h2:
+    console:
+      enabled: true
+  datasource:
+    username: devanshDB
+    password: devcodes21
+  jpa:
+    hibernate:
+      ddl-ato: update
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
