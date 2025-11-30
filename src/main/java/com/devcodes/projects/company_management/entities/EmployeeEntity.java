@@ -6,15 +6,22 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
 @Entity
-public class Department {
+public class EmployeeEntity {
     Integer id;
-    String title;
-    Boolean isActive;
-    Instant createdAt;
+    String name;
+    Integer age;
+    Double salary;
+    LocalDate dateOfHire;
+    LocalDate dob;
+    Long phoneNumber;
+    String creditCardNumber;
+    Boolean isPermanent;
+    List<String> addressList;
 }
